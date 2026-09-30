@@ -7,7 +7,17 @@
     <meta name="description" content="把 awesome-scalability 的九百多篇文章，依知識、習慣、技能、智慧四個階段排成由淺入深的大型系統學習路徑。" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" />
+    <script>
+      // 在畫面繪出前先決定深淺色，避免深色使用者看到白畫面閃一下
+      (function () {
+        var t;
+        try { t = localStorage.getItem('theme'); } catch (e) {}
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = t;
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'dark' ? '#0f171b' : '#f1f4f3');
+      })();
+    </script>
     <title>系統擴展學習網｜大型系統的學習路徑</title>
   </head>
   <body>

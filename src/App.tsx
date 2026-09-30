@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { Archive, BookOpen, Check, ChevronLeft, ChevronRight, CircleAlert, Copy, ExternalLink, Menu, NotebookPen, Search, Sparkles, X } from 'lucide-react';
+import { Archive, BookOpen, Check, ChevronLeft, ChevronRight, CircleAlert, Copy, ExternalLink, Menu, Moon, NotebookPen, Search, Sparkles, Sun, X } from 'lucide-react';
 import { checkedAt, lessonById, lessons, tierById, tiers, unitById, type Lesson, type LinkStatus, type Tier, type Unit } from './curriculum';
 import { DesignGuide, Logo } from './DesignGuide';
 import * as store from './store';
@@ -29,6 +29,32 @@ function parseRoute(hash: string): Route {
   return { name: 'home' };
 }
 
+type Theme = 'light' | 'dark';
+const THEME_KEY = 'theme';
+const THEME_COLOR: Record<Theme, string> = { light: '#f1f4f3', dark: '#0f171b' };
+const savedTheme = () => { try { return localStorage.getItem(THEME_KEY); } catch { return null; } };
+
+// 預設跟著系統；按過切換鈕之後以使用者的選擇為準。index.html 的內嵌腳本會先設好 data-theme，避免畫面閃一下
+function useTheme() {
+  const [theme, setTheme] = useState<Theme>(() => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'));
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLOR[theme]);
+  }, [theme]);
+  useEffect(() => {
+    const media = matchMedia('(prefers-color-scheme: dark)');
+    const follow = () => { if (!savedTheme()) setTheme(media.matches ? 'dark' : 'light'); };
+    media.addEventListener('change', follow);
+    return () => media.removeEventListener('change', follow);
+  }, []);
+  const toggle = () => {
+    const next: Theme = theme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(THEME_KEY, next); } catch { /* 無法記住也沒關係，這次仍會切換 */ }
+    setTheme(next);
+  };
+  return [theme, toggle] as const;
+}
+
 const vars = (values: Record<string, string | number>) => values as CSSProperties;
 const pct = (part: number, total: number) => (total ? Math.round((part / total) * 100) : 0);
 const doneIn = (list: Lesson[], done: Set<string>) => list.reduce((n, l) => n + (done.has(l.id) ? 1 : 0), 0);
@@ -44,6 +70,7 @@ export default function App() {
   const [drawer, setDrawer] = useState(false);
   const [toast, setToast] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
+  const [theme, toggleTheme] = useTheme();
 
   useEffect(() => {
     const onHash = () => { setHash(location.hash); setQuery(''); setDrawer(false); window.scrollTo(0, 0); };
@@ -65,6 +92,11 @@ export default function App() {
     const title = route.name === 'lesson' ? route.lesson.title : route.name === 'unit' ? route.unit.name : route.name === 'tier' ? `第${CN[route.tier.no]}階 ${route.tier.name}` : route.name === 'health' ? '連結健康度' : route.name === 'history' ? '學習紀錄' : route.name === 'design' ? '設計規範' : '';
     document.title = title ? `${title}｜系統擴展學習網` : '系統擴展學習網｜大型系統的學習路徑';
   }, [route]);
+
+  useEffect(() => {
+    document.body.classList.toggle('no-scroll', drawer);
+    return () => document.body.classList.remove('no-scroll');
+  }, [drawer]);
 
   useEffect(() => {
     if (!toast) return;
@@ -108,8 +140,11 @@ export default function App() {
             <Search size={16} aria-hidden />
             <span className="sr-only">搜尋課題</span>
             <input ref={searchRef} value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Escape') setQuery(''); }} placeholder="搜尋課題、概念或公司" />
-            {query ? <button className="btn btn-quiet btn-icon" style={{ minHeight: 28, width: 28 }} onClick={() => setQuery('')} aria-label="清除搜尋"><X size={14} /></button> : <kbd>/</kbd>}
+            {query ? <button className="btn btn-quiet btn-icon" onClick={() => setQuery('')} aria-label="清除搜尋"><X size={16} aria-hidden /></button> : <kbd>/</kbd>}
           </label>
+          <button className="btn btn-quiet btn-icon theme-toggle" onClick={toggleTheme} aria-label={theme === 'dark' ? '切換成淺色模式' : '切換成深色模式'} title={theme === 'dark' ? '淺色模式' : '深色模式'}>
+            {theme === 'dark' ? <Sun size={20} aria-hidden /> : <Moon size={20} aria-hidden />}
+          </button>
         </header>
         {query.trim() ? (
           <SearchResults query={query.trim()} done={done} onPick={() => setQuery('')} />
@@ -145,6 +180,8 @@ function Sidebar({ route, done, open, onClose }: { route: Route; done: Set<strin
     setShownTier(activeTier);
     if (activeTier) setOpenTier(activeTier.id);
   }
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => { if (open) closeRef.current?.focus(); }, [open]);
   const finished = doneIn(lessons, done);
   const broken = lessons.filter((l) => l.status === 'dead' || l.status === 'soft-dead').length;
 
@@ -152,10 +189,13 @@ function Sidebar({ route, done, open, onClose }: { route: Route; done: Set<strin
     <>
       {open && <div className="scrim" onClick={onClose} />}
       <aside className={`sidebar ${open ? 'is-open' : ''}`}>
-        <a className="brand" href="#/">
-          <Logo />
-          <span><span className="brand-name">系統擴展學習網</span><span className="brand-sub">大型系統的學習路徑</span></span>
-        </a>
+        <div className="side-head">
+          <a className="brand" href="#/">
+            <Logo />
+            <span><span className="brand-name">系統擴展學習網</span><span className="brand-sub">大型系統的學習路徑</span></span>
+          </a>
+          <button ref={closeRef} className="btn btn-quiet btn-icon drawer-close" onClick={onClose} aria-label="關閉學習路徑"><X size={20} aria-hidden /></button>
+        </div>
         <div className={`progress-card tier-${next.tier.id}`}>
           <div className="row" style={{ justifyContent: 'space-between' }}>
             <span className="caption">已完成 <span className="num">{finished} / {lessons.length}</span> 課</span>
@@ -234,59 +274,38 @@ function Home({ done }: { done: Set<string> }) {
   return (
     <div className="page">
       <section className="hero">
-        <div>
-          <h1>從一個概念，<br />走到整個系統。</h1>
+        <h1>從一個概念，<br /><span className="hero-step">走到整個系統。</span></h1>
+        <div className="hero-side">
           <p className="lead">awesome-scalability 收錄的 {lessons.length} 篇文章，依照知識、習慣、技能、智慧四個階段，排成一條由淺入深的路。每一課只留下標題、摘要與重點，方便你複製去搜尋，或拿去問 AI。</p>
-          <div className="row">
-            <a className="btn btn-primary" href={`#/lesson/${next.id}`}>{started ? '繼續學習' : '從第一課開始'}</a>
-            <a className="btn btn-secondary" href="#/tier/knowledge">看第一階有什麼</a>
+          <div className={`hero-next tier-${next.tier.id}`}>
+            <p className="eyebrow">{started ? '下一課' : '第一課'}：第{CN[next.tier.no]}階 {next.tier.name}，{next.unit.name}</p>
+            <p className="hero-next-title">{next.title}</p>
+            <a className="btn btn-primary" href={`#/lesson/${next.id}`}>{started ? '繼續這一課' : '開始這一課'}</a>
           </div>
         </div>
-        <ol className="stairs" aria-label="四個學習階段">
-          {tiers.map((tier) => {
-            const all = tierLessons(tier);
-            const k = doneIn(all, done);
-            return (
-              <li key={tier.id} className={`tier-${tier.id}`}>
-                <a className="step" href={`#/tier/${tier.id}`} style={vars({ '--p': pct(k, all.length) })}>
+      </section>
+
+      <ol className="stairs" aria-label="四個學習階段，由小到大">
+        {tiers.map((tier) => {
+          const all = tierLessons(tier);
+          const k = doneIn(all, done);
+          return (
+            <li key={tier.id} className={`tier-${tier.id}`}>
+              <a className="stair" href={`#/tier/${tier.id}`}>
+                <span className="step" style={vars({ '--p': pct(k, all.length) })}>
                   <span className="step-no">第{CN[tier.no]}階</span>
                   <span className="step-name">{tier.name}</span>
-                  <span className="step-scale">{tier.verb}{tier.scale}</span>
-                  <span className="step-count">{k}/{all.length} 課</span>
-                </a>
-              </li>
-            );
-          })}
-        </ol>
-      </section>
-
-      <section className={`next-card tier-${next.tier.id}`}>
-        <div className="stack" style={{ gap: 4 }}>
-          <p className="eyebrow">{started ? '下一課' : '第一課'}：第{CN[next.tier.no]}階 {next.tier.name}，{next.unit.name}</p>
-          <h2>{next.title}</h2>
-          <p className="muted">{next.summary}</p>
-        </div>
-        <a className="btn btn-primary" href={`#/lesson/${next.id}`}>{started ? '繼續這一課' : '開始這一課'}</a>
-      </section>
-
-      <section className="section">
-        <h2 className="section-title">四個階段，由小到大</h2>
-        <p className="muted">每往上一階，你要照顧的範圍就更大：從一個概念，到一個服務、一組分散式元件，最後是整個系統與團隊。</p>
-        <ul className="tier-list">
-          {tiers.map((tier) => {
-            const all = tierLessons(tier);
-            return (
-              <li key={tier.id} className={`tier-${tier.id}`}>
-                <a className="tier-line" href={`#/tier/${tier.id}`}>
-                  <span className="tier-badge">{tier.name}</span>
-                  <span><strong>{tier.verb}{tier.scale}</strong><span className="caption" style={{ display: 'block' }}>{tier.promise}</span></span>
-                  <span className="caption num">{tier.units.length} 個單元，{all.length} 課</span>
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+                </span>
+                <span className="stair-caption">
+                  <strong>{tier.verb}{tier.scale}</strong>
+                  <span className="stair-promise">{tier.promise}</span>
+                  <span className="caption num">{k ? `${k} / ` : ''}{all.length} 課<span className="stair-units">，{tier.units.length} 個單元</span></span>
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ol>
 
       <section className="section">
         <h2 className="section-title">每一課怎麼學</h2>
@@ -652,7 +671,7 @@ const REPORT_TEXT: Record<LinkStatus, string> = {
   dead: '打不開或已刪除',
   unknown: '網站阻擋檢測',
 };
-const REPORT_COLOR: Record<LinkStatus, string> = { ok: 'var(--ok)', moved: 'var(--t2)', 'soft-dead': '#d4a13a', dead: 'var(--danger)', unknown: 'var(--line-strong)' };
+const REPORT_COLOR: Record<LinkStatus, string> = { ok: 'var(--ok)', moved: 'var(--t2)', 'soft-dead': 'var(--warn-bar)', dead: 'var(--danger)', unknown: 'var(--line-strong)' };
 
 function HealthPage() {
   const [filter, setFilter] = useState<LinkStatus | 'all'>('all');
