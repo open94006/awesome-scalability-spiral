@@ -1,6 +1,6 @@
 # 系統擴展學習網
 
-把 GitHub 上的 [awesome-scalability](https://github.com/binhnguyennus/awesome-scalability) 閱讀清單整理成一條由淺入深的大型系統學習路徑。以 React、TypeScript 與 Vite 打造，學習進度與筆記存在本機的 SQLite。
+把 GitHub 上的 [awesome-scalability](https://github.com/binhnguyennus/awesome-scalability) 閱讀清單整理成一條由淺入深的大型系統學習路徑。以 React、TypeScript 與 Vite 打造。有兩種用法：在自己電腦上跑（進度與筆記存在本機 SQLite），或部署到 GitHub Pages 給別人用（進度與筆記存在各自瀏覽器的 localStorage）。
 
 ## 學習路徑：知識 → 習慣 → 技能 → 智慧
 
@@ -40,11 +40,16 @@ lsof -ti:5173 | xargs kill
 
 在 macOS 上想點兩下就開啟，可以在桌面建立一個 `.command` 檔，內容執行 `scripts/study.sh` 即可。
 
-## 學習進度與筆記
+## 部署到 GitHub Pages
+
+推到 `main` 分支後，`.github/workflows/pages.yml` 會自動執行 `npm run build:pages` 並部署。第一次使用前，到 GitHub repo 的 **Settings → Pages → Build and deployment → Source** 選 **GitHub Actions**。
+
+Pages 版沒有伺服器，學習進度、筆記與學習紀錄都存在使用者自己瀏覽器的 localStorage：換瀏覽器、換裝置或清除網站資料就會不見，無痕視窗關掉後也會消失。
+
+## 學習進度與筆記（本機版）
 
 - 存在 `data/progress.sqlite`，由 Vite 伺服器上的 `/api` 讀寫（見 `vite.config.ts`）。
 - 以這台電腦的 MAC 位址辨識學習者（macOS 讀硬體位址，其他系統讀第一張網卡），同一台電腦的所有瀏覽器與無痕視窗共用一份進度。
-- 只在 `npm run study`、`npm run dev`、`npm run preview` 時可用；若把 `dist/` 當純靜態網站部署，進度只會存在瀏覽器的 localStorage，筆記與學習紀錄無法使用。
 - `data/` 已列入 `.gitignore`，不會被提交。
 
 安全設計：伺服器只聽本機連線；拒絕帶有其他網站 Origin 的請求，避免你瀏覽的網頁偷改進度；`/data/` 底下的檔案不對外提供；請求內容上限約 20 萬字；所有查詢皆為參數化語句。
@@ -67,7 +72,8 @@ lsof -ti:5173 | xargs kill
 
 | 指令 | 用途 |
 | --- | --- |
-| `npm run build` | 型別檢查並打包到 `dist/` |
+| `npm run build` | 型別檢查並打包本機版到 `dist/`（用 `npm run preview` 開啟） |
+| `npm run build:pages` | 打包 GitHub Pages 版到 `dist/`（進度存在瀏覽器） |
 | `npm run check:links` | 重新抓取上游目錄並檢測所有連結，更新 `src/data/links.json`（約 5 到 10 分鐘） |
 | `npm run check:content` | 確認課程完整涵蓋上游每個網址、每課重點為三到五項，並掃描簡體字與大陸用語 |
 
@@ -77,7 +83,9 @@ lsof -ti:5173 | xargs kill
 - `src/data/links.json`：上游目錄結構與每個連結的檢測結果。
 - `src/App.tsx`：學習路徑側欄、總覽、階段、單元、課題、筆記、學習紀錄、搜尋與連結健康度頁面。
 - `src/DesignGuide.tsx`、`src/styles.css`、`DESIGN.md`：設計規範。
-- `vite.config.ts`：學習進度與筆記的 SQLite 介面。
+- `src/store.ts`：學習進度與筆記的讀寫，依版本決定存在 SQLite 或 localStorage。
+- `vite.config.ts`：本機版的 SQLite 介面。
+- `.github/workflows/pages.yml`：GitHub Pages 自動部署。
 - `scripts/`：連結檢測、內容檢查與啟動腳本。
 
 ## 致謝

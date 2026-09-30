@@ -7,6 +7,7 @@
     "study": "sh scripts/study.sh",
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:pages": "tsc -b && vite build --mode pages",
     "preview": "vite preview",
     "check:links": "node scripts/check-links.mjs",
     "check:content": "node scripts/check-content.mjs"

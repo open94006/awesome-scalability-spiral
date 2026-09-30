@@ -95,6 +95,8 @@ function progressApi(): Plugin {
   };
 }
 
-export default defineConfig({
-  plugins: [react(), progressApi()],
-});
+// 打包時不需要進度介面；base 用相對路徑，放在 GitHub Pages 的子路徑（/repo 名稱/）也能正常載入
+export default defineConfig(({ command }) => ({
+  base: './',
+  plugins: command === 'serve' ? [react(), progressApi()] : [react()],
+}));

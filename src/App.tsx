@@ -2,8 +2,8 @@ import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } fr
 import { Archive, BookOpen, Check, ChevronLeft, ChevronRight, CircleAlert, Copy, ExternalLink, Menu, NotebookPen, Search, Sparkles, X } from 'lucide-react';
 import { checkedAt, lessonById, lessons, tierById, tiers, unitById, type Lesson, type LinkStatus, type Tier, type Unit } from './curriculum';
 import { DesignGuide, Logo } from './DesignGuide';
+import * as store from './store';
 
-const STORE = 'scale-spiral-done-v2';
 const CN = ['', '一', '二', '三', '四'];
 
 type Route =
@@ -36,21 +36,10 @@ const tierLessons = (tier: Tier) => tier.units.flatMap((u) => u.lessons);
 const nextLesson = (done: Set<string>, list = lessons) => list.find((l) => !done.has(l.id)) ?? list[0];
 const searchText = new Map(lessons.map((l) => [l.id, `${l.title} ${l.original} ${l.summary} ${l.points.join(' ')} ${l.unit.name}`.toLowerCase()]));
 
-function loadDone(): Set<string> {
-  try {
-    return new Set(JSON.parse(localStorage.getItem(STORE) ?? '[]') as string[]);
-  } catch {
-    return new Set();
-  }
-}
-
-const saveProgress = (ids: string[], done: boolean): Promise<{ done: string[] }> =>
-  fetch('/api/progress', { method: 'POST', body: JSON.stringify({ ids, done }) }).then((r) => r.json());
-
 export default function App() {
   const [hash, setHash] = useState(() => location.hash);
   const route = useMemo(() => parseRoute(hash), [hash]);
-  const [done, setDone] = useState(loadDone);
+  const [done, setDone] = useState(() => new Set(store.initialDone()));
   const [query, setQuery] = useState('');
   const [drawer, setDrawer] = useState(false);
   const [toast, setToast] = useState('');
@@ -69,17 +58,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    try { localStorage.setItem(STORE, JSON.stringify([...done])); } catch { /* 無痕模式等情況存不了，改靠伺服器端 SQLite */ }
-  }, [done]);
-
-  // 以本機伺服器的 SQLite 為準；舊的 localStorage 進度第一次會補傳上去。沒有伺服器（純靜態部署）就只用 localStorage。
-  useEffect(() => {
-    const local = loadDone();
-    fetch('/api/progress').then((r) => r.json()).then(async ({ done: saved }: { done: string[] }) => {
-      const missing = [...local].filter((id) => !saved.includes(id));
-      if (missing.length) saved = (await saveProgress(missing, true)).done;
-      setDone(new Set(saved));
-    }).catch(() => {});
+    store.loadDone().then((ids) => setDone(new Set(ids))).catch(() => setToast(store.saveFailed));
   }, []);
 
   useEffect(() => {
@@ -110,7 +89,7 @@ export default function App() {
   };
 
   const setLessonDone = (lesson: Lesson, value: boolean) => {
-    saveProgress([lesson.id], value).catch(() => {});
+    store.saveDone([lesson.id], value).catch(() => setToast(store.saveFailed));
     setDone((current) => {
       const next = new Set(current);
       if (value) next.add(lesson.id); else next.delete(lesson.id);
@@ -227,7 +206,7 @@ function Sidebar({ route, done, open, onClose }: { route: Route; done: Set<strin
           <a href="#/health" className={route.name === 'health' ? 'is-current' : ''}><span>連結健康度</span><span className="caption">{broken} 條失效</span></a>
           <a href="#/design" className={route.name === 'design' ? 'is-current' : ''}><span>設計規範</span></a>
         </div>
-        <p className="side-note caption">內容整理自 GitHub 上的 awesome-scalability 閱讀清單。學習進度與筆記存在這台電腦的 data/progress.sqlite，換瀏覽器也看得到。</p>
+        <p className="side-note caption">內容整理自 GitHub 上的 awesome-scalability 閱讀清單。學習進度與筆記存在{store.where}{store.browserOnly ? '，換瀏覽器或清除網站資料就會不見' : '，換瀏覽器也看得到'}。</p>
       </aside>
     </>
   );
@@ -509,12 +488,11 @@ function LessonPage({ lesson, done, onDone, onCopy }: { lesson: Lesson; done: bo
   );
 }
 
-type SaveState = '' | '儲存中…' | '已儲存' | '儲存失敗，請確認本機伺服器有開著';
 
 // 每課一則筆記，停止打字 0.8 秒、離開輸入框或換頁時自動存進 SQLite
 function NoteBox({ lesson }: { lesson: Lesson }) {
   const [text, setText] = useState<string | null>(null);
-  const [state, setState] = useState<SaveState>('');
+  const [state, setState] = useState('');
   const saved = useRef('');
   const latest = useRef<string | null>(null);
   latest.current = text;
@@ -522,14 +500,14 @@ function NoteBox({ lesson }: { lesson: Lesson }) {
   const save = (value: string | null) => {
     if (value === null || value === saved.current) return;
     setState('儲存中…');
-    fetch(`/api/notes/${lesson.id}`, { method: 'PUT', body: value, keepalive: true })
-      .then((r) => { if (!r.ok) throw new Error(); saved.current = value; setState('已儲存'); })
-      .catch(() => setState('儲存失敗，請確認本機伺服器有開著'));
+    store.putNote(lesson.id, value)
+      .then(() => { saved.current = value; setState('已儲存'); })
+      .catch(() => setState(store.saveFailed));
   };
 
   useEffect(() => {
-    fetch(`/api/notes/${lesson.id}`).then((r) => r.json()).then(({ text }: { text: string }) => { saved.current = text; setText(text); })
-      .catch(() => { setText(''); setState('儲存失敗，請確認本機伺服器有開著'); });
+    store.getNote(lesson.id).then((text) => { saved.current = text; setText(text); })
+      .catch(() => { setText(''); setState(store.saveFailed); });
     return () => save(latest.current);
   }, []);
 
@@ -557,19 +535,16 @@ function NoteBox({ lesson }: { lesson: Lesson }) {
   );
 }
 
-type HistoryRow = { lesson: string; at: string; done: 0 | 1; note: string | null };
-
 function HistoryPage() {
-  const [rows, setRows] = useState<HistoryRow[] | null>(null);
+  const [rows, setRows] = useState<store.HistoryRow[] | null>(null);
   const [onlyNotes, setOnlyNotes] = useState(false);
   useEffect(() => {
-    fetch('/api/history').then((r) => r.json()).then(setRows).catch(() => setRows([]));
+    store.loadHistory().then(setRows).catch(() => setRows([]));
   }, []);
 
-  // 資料庫存的是 UTC，換成本地時間再依日期分組
   const entries = (rows ?? []).flatMap((r) => {
     const lesson = lessonById.get(r.lesson);
-    return lesson ? [{ ...r, lesson, time: new Date(`${r.at.replace(' ', 'T')}Z`) }] : [];
+    return lesson ? [{ ...r, lesson }] : [];
   });
   const shown = onlyNotes ? entries.filter((e) => e.note) : entries;
   const dayOf = (d: Date) => d.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
@@ -610,7 +585,7 @@ function HistoryPage() {
                     <LessonRow
                       lesson={e.lesson}
                       label={e.time.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false })}
-                      done={!!e.done}
+                      done={e.done}
                       context={`第${CN[e.lesson.tier.no]}階 ${e.lesson.tier.name}，${e.lesson.unit.name}`}
                       note={e.note ?? undefined}
                     />
