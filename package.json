@@ -1,0 +1,26 @@
+{
+  "name": "awesome-scalability-spiral",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "study": "sh scripts/study.sh",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "check:links": "node scripts/check-links.mjs",
+    "check:content": "node scripts/check-content.mjs"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "lucide-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0"
+  }
+}
