@@ -1,4 +1,4 @@
-# 擴展螺旋
+# 系統擴展學習網
 
 把 GitHub 上的 [awesome-scalability](https://github.com/binhnguyennus/awesome-scalability) 閱讀清單整理成一條由淺入深的大型系統學習路徑。以 React、TypeScript 與 Vite 打造，學習進度與筆記存在本機的 SQLite。
 

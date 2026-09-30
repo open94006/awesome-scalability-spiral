@@ -84,7 +84,7 @@ export default function App() {
 
   useEffect(() => {
     const title = route.name === 'lesson' ? route.lesson.title : route.name === 'unit' ? route.unit.name : route.name === 'tier' ? `第${CN[route.tier.no]}階 ${route.tier.name}` : route.name === 'health' ? '連結健康度' : route.name === 'history' ? '學習紀錄' : route.name === 'design' ? '設計規範' : '';
-    document.title = title ? `${title}｜擴展螺旋` : '擴展螺旋｜大型系統的學習路徑';
+    document.title = title ? `${title}｜系統擴展學習網` : '系統擴展學習網｜大型系統的學習路徑';
   }, [route]);
 
   useEffect(() => {
@@ -175,7 +175,7 @@ function Sidebar({ route, done, open, onClose }: { route: Route; done: Set<strin
       <aside className={`sidebar ${open ? 'is-open' : ''}`}>
         <a className="brand" href="#/">
           <Logo />
-          <span><span className="brand-name">擴展螺旋</span><span className="brand-sub">大型系統的學習路徑</span></span>
+          <span><span className="brand-name">系統擴展學習網</span><span className="brand-sub">大型系統的學習路徑</span></span>
         </a>
         <div className={`progress-card tier-${next.tier.id}`}>
           <div className="row" style={{ justifyContent: 'space-between' }}>

@@ -79,7 +79,7 @@ export function DesignGuide() {
       <section className="section">
         <h2 className="section-title">品牌標誌</h2>
         <div className="spec">
-          <div className="row"><Logo size={72} /><div><p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-h2)' }}>擴展螺旋</p><p className="caption">四段弧線由小到大、由淺入深，對應知識、習慣、技能、智慧。</p></div></div>
+          <div className="row"><Logo size={72} /><div><p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--fs-h2)' }}>系統擴展學習網</p><p className="caption">四段弧線由小到大、由淺入深，對應知識、習慣、技能、智慧。</p></div></div>
         </div>
       </section>
 
