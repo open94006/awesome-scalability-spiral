@@ -1,4 +1,5 @@
 import linkData from '../data/links.json';
+import lessonMeta from '../data/lesson-meta.json';
 import { knowledge } from './knowledge';
 import { habit } from './habit';
 import { skillData } from './skill-data';
@@ -11,6 +12,8 @@ import type { UnitSource } from './types';
 
 export type TierId = 'knowledge' | 'habit' | 'skill' | 'wisdom';
 export type LinkStatus = 'ok' | 'moved' | 'soft-dead' | 'dead' | 'unknown';
+/** 摘要與重點的依據：讀過全文／只取得部分內容（例如演講摘要、影片說明）／取不到原文、只依標題 */
+export type Basis = 'fulltext' | 'partial' | 'title-only';
 
 export interface Lesson {
   id: string;
@@ -18,6 +21,7 @@ export interface Lesson {
   original: string;
   summary: string;
   points: readonly string[];
+  basis: Basis;
   url: string;
   /** 實際要開啟的網址：搬家的文章指向新網址；網域易主的不提供 */
   href: string | null;
@@ -123,6 +127,8 @@ const SOURCES: Record<TierId, UnitSource[]> = {
 type LinkResult = { status: LinkStatus; reason: string; archive?: string | null; newUrl?: string; hideOriginal?: boolean };
 const results = linkData.results as unknown as Record<string, LinkResult>;
 const readme = new Map(linkData.links.map((l) => [l.url, l]));
+// ponytail: 只記錄不是全文的課，沒列出的就是讀過全文
+const bases = lessonMeta as Record<string, { basis: Basis }>;
 
 // ponytail: 32 位元 FNV-1a 雜湊當課程編號，網址不變編號就不變；916 筆碰撞機率約萬分之一，碰到時加尾碼
 function hash(text: string) {
@@ -146,6 +152,7 @@ export const tiers: Tier[] = TIERS.map((meta) => {
       usedIds.add(id);
       const lesson: Lesson = {
         id, title, summary, points, url, unit, tier,
+        basis: bases[url]?.basis ?? 'fulltext',
         original: info?.title ?? '',
         href: result.hideOriginal ? null : result.newUrl ?? url,
         archive: result.archive ?? null,

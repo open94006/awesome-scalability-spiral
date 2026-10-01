@@ -1,0 +1,131 @@
+{
+ "http://engineering.pivotal.io/post/scaling-machine-learning-to-recommend-driving-routes/": {
+  "basis": "title-only"
+ },
+ "http://engineering.wattpad.com/post/146216619727/self-ranking-search-with-elasticsearch-at-wattpad": {
+  "basis": "title-only"
+ },
+ "http://engineering.wattpad.com/post/23244724794/store-more-stuff-memory-optimization-in-redis": {
+  "basis": "title-only"
+ },
+ "https://airflow.apache.org/": {
+  "basis": "partial"
+ },
+ "https://atscaleconference.com/videos/performance-scale-2018-opening-remarks/": {
+  "basis": "title-only"
+ },
+ "https://atscaleconference.com/videos/scaling-alibabas-real-time-infrastructure-for-global-shopping-holiday/": {
+  "basis": "partial"
+ },
+ "https://atscaleconference.com/videos/solving-large-scale-data-center-and-cloud-interconnection-problems/": {
+  "basis": "partial"
+ },
+ "https://aws.amazon.com/nosql/columnar/": {
+  "basis": "partial"
+ },
+ "https://badoo.com/techblog/blog/2016/06/06/collection-and-analysis-of-daemon-logs-at-badoo/": {
+  "basis": "title-only"
+ },
+ "https://cdn.oreillystatic.com/en/assets/1/event/269/Lyft_s%20analytics%20pipeline_%20From%20Redshift%20to%20Apache%20Hive%20and%20Presto%20Presentation.pdf": {
+  "basis": "title-only"
+ },
+ "https://code.facebook.com/posts/220956754772273/an-analysis-of-facebook-photo-caching/": {
+  "basis": "partial"
+ },
+ "https://conferences.oreilly.com/strata/strata-ca/public/schedule/detail/68131": {
+  "basis": "partial"
+ },
+ "https://engineeringblog.yelp.com/2017/05/taking-zero-downtime-load-balancing-even-further.html": {
+  "basis": "title-only"
+ },
+ "https://engineeringblog.yelp.com/2018/03/caching-internal-service-calls-at-yelp.html": {
+  "basis": "title-only"
+ },
+ "https://hbase.apache.org/": {
+  "basis": "partial"
+ },
+ "https://lynnlangit.com/2017/03/14/beyond-relational/": {
+  "basis": "title-only"
+ },
+ "https://tech.grammarly.com/blog/building-a-versatile-analytics-pipeline-on-top-of-apache-spark": {
+  "basis": "partial"
+ },
+ "https://use-the-index-luke.com/sql/testing-scalability": {
+  "basis": "partial"
+ },
+ "https://vimeo.com/252367076": {
+  "basis": "title-only"
+ },
+ "https://www.eecs.harvard.edu/margo/papers/systor13-bench/": {
+  "basis": "partial"
+ },
+ "https://www.eventbrite.com/engineering/big-data-workloads-presto-auto-scaling/": {
+  "basis": "title-only"
+ },
+ "https://www.infoq.com/presentations/big-data-infrastructure-linkedin": {
+  "basis": "partial"
+ },
+ "https://www.infoq.com/presentations/canopy-scalable-tracing-analytics-facebook": {
+  "basis": "partial"
+ },
+ "https://www.infoq.com/presentations/circuit-breaking-distributed-systems": {
+  "basis": "partial"
+ },
+ "https://www.infoq.com/presentations/doordash-real-time-predictions": {
+  "basis": "partial"
+ },
+ "https://www.infoq.com/presentations/effective-api-design": {
+  "basis": "partial"
+ },
+ "https://www.infoq.com/presentations/expedia-website-resiliency?utm_source=presentations_about_Case_Study&utm_medium=link&utm_campaign=Case_Study": {
+  "basis": "partial"
+ },
+ "https://www.infoq.com/presentations/neflix-push-messaging-scale": {
+  "basis": "partial"
+ },
+ "https://www.infoq.com/presentations/netflix-scale-event-sourcing": {
+  "basis": "partial"
+ },
+ "https://www.infoq.com/presentations/news-alerting-bloomberg": {
+  "basis": "partial"
+ },
+ "https://www.infoq.com/presentations/paypal-ml-fraud-prevention-2018": {
+  "basis": "partial"
+ },
+ "https://www.infoq.com/presentations/quora-analytics": {
+  "basis": "partial"
+ },
+ "https://www.infoq.com/presentations/uber-elasticsearch-clusters?utm_source=presentations_about_Case_Study&utm_medium=link&utm_campaign=Case_Study": {
+  "basis": "partial"
+ },
+ "https://www.mysql.com/products/cluster/scalability.html": {
+  "basis": "partial"
+ },
+ "https://www.salesforce.com/video/1757880/": {
+  "basis": "partial"
+ },
+ "https://www.usenix.org/conference/srecon16/program/presentation/alvidrez": {
+  "basis": "partial"
+ },
+ "https://www.usenix.org/conference/srecon16/program/presentation/lueder": {
+  "basis": "partial"
+ },
+ "https://www.usenix.org/conference/srecon17americas/program/presentation/arthorne": {
+  "basis": "partial"
+ },
+ "https://www.usenix.org/conference/srecon17americas/program/presentation/erlich": {
+  "basis": "partial"
+ },
+ "https://www.usenix.org/conference/srecon17asia/program/presentation/liu_zehua": {
+  "basis": "partial"
+ },
+ "https://www.usenix.org/conference/srecon18asia/presentation/xinchi": {
+  "basis": "partial"
+ },
+ "https://www.youtube.com/watch?v=CSDIThSwA7s": {
+  "basis": "title-only"
+ },
+ "https://www.youtube.com/watch?v=nuiLcWE8sPA": {
+  "basis": "title-only"
+ }
+}

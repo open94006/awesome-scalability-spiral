@@ -432,12 +432,44 @@ function StatusChip({ status }: { status: LinkStatus }) {
 }
 
 function aiPrompt(lesson: Lesson) {
+  const source = `原文：${lesson.original}（${lesson.href ?? lesson.archive ?? lesson.url}）`;
+  const points = lesson.points.map((p, i) => `   ${i + 1}) ${p}`);
+  if (lesson.basis === 'title-only') {
+    return [
+      `我正在學習大型系統設計，這一課是「${lesson.title}」，但原文目前無法取得。`,
+      source,
+      '請用繁體中文與台灣常用的技術用語，把我當作 Junior 到 Mid-Level 的工程師：',
+      '1. 請幫我找到這篇文章（例如封存版或轉載），或主題相近、可以查證的替代資料，並附上連結。',
+      '2. 再依據你找到的資料，逐一回答下面幾個問題，並各舉一個實際例子：',
+      ...points,
+      '3. 哪些說法是原文確實提到的、哪些是你依一般知識補充的，請分開標示。',
+      '4. 最後出三題練習題，讓我檢查自己是否真的懂了。',
+    ].join('\n');
+  }
   return [
-    `我正在學習大型系統設計，這一課的主題是「${lesson.title}」（原文標題：${lesson.original}）。`,
-    '請用繁體中文與台灣常用的技術用語，並把我當作 Junior ~ Mid-Level 的工程師，逐一解釋下面幾個重點，並各舉一個實際例子：',
-    ...lesson.points.map((p, i) => `${i + 1}. ${p}`),
-    '最後請出三題練習題，讓我檢查自己是不是真的懂了。',
+    `我正在學習大型系統設計，這一課是「${lesson.title}」。`,
+    source,
+    '請用繁體中文與台灣常用的技術用語，把我當作 Junior 到 Mid-Level 的工程師：',
+    '1. 先根據原文，逐一說明下面幾個重點背後的原因與做法，並各舉一個實際例子：',
+    ...points,
+    '2. 再補充這個主題在業界的其他常見做法或後續發展，並附上可以查證的出處連結。',
+    '3. 如果你的說明和原文有出入，請明確指出。',
+    '4. 最後出三題練習題，讓我檢查自己是否真的懂了。',
   ].join('\n');
+}
+
+// 摘要與重點不是讀全文寫成的，要讓讀者知道
+function BasisNotice({ lesson }: { lesson: Lesson }) {
+  if (lesson.basis === 'fulltext') return null;
+  const [title, detail] = lesson.basis === 'title-only'
+    ? ['這課的原文目前無法取得，摘要只依標題判斷主題。', '下方列的是可以自己追查的問題，而不是原文的重點。']
+    : ['原文只取得部分內容（例如演講摘要、影片說明或投影片）。', '重點只涵蓋這部分，完整內容請看原文。'];
+  return (
+    <div className="callout" role="note">
+      <CircleAlert size={16} aria-hidden />
+      <div><p><strong>{title}</strong></p><p>{detail}</p></div>
+    </div>
+  );
 }
 
 function LessonPage({ lesson, done, onDone, onCopy }: { lesson: Lesson; done: boolean; onDone: (lesson: Lesson, value: boolean) => void; onCopy: (text: string) => void }) {
@@ -460,12 +492,13 @@ function LessonPage({ lesson, done, onDone, onCopy }: { lesson: Lesson; done: bo
 
       <div className="stack">
         <LinkNotice lesson={lesson} />
+        <BasisNotice lesson={lesson} />
         <p className="lead">{lesson.summary}</p>
       </div>
 
       <section className="section">
         <div className="row" style={{ justifyContent: 'space-between' }}>
-          <h2 className="section-title">重點</h2>
+          <h2 className="section-title">{lesson.basis === 'title-only' ? '待追查的問題' : '重點'}</h2>
           <button className="btn btn-secondary btn-sm" onClick={() => onCopy(aiPrompt(lesson))}><Sparkles size={14} aria-hidden />複製 AI 提問</button>
         </div>
         <ul className="points">
