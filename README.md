@@ -1,6 +1,6 @@
-# 系統擴展學習網
+# 系統設計學習網
 
-把 GitHub 上的 [awesome-scalability](https://github.com/binhnguyennus/awesome-scalability) 閱讀清單整理成一條由淺入深的大型系統學習路徑。以 React、TypeScript 與 Vite 打造。有兩種用法：在自己電腦上跑（進度與筆記存在本機 SQLite），或部署到 GitHub Pages 給別人用（進度與筆記存在各自瀏覽器的 localStorage）。
+繁體中文的系統設計學習網站：把 GitHub 上的 [awesome-scalability](https://github.com/binhnguyennus/awesome-scalability) 閱讀清單（916 篇系統設計與分散式系統文章）整理成由淺入深的學習路徑，從基礎概念一路走到系統設計面試題型。以 React、TypeScript 與 Vite 打造。有兩種用法：在自己電腦上跑（進度與筆記存在本機 SQLite），或部署到 GitHub Pages 給別人用（進度與筆記存在各自瀏覽器的 localStorage）。
 
 ## 學習路徑：知識 → 習慣 → 技能 → 智慧
 
@@ -46,6 +46,8 @@ lsof -ti:5173 | xargs kill
 
 Pages 版沒有伺服器，學習進度、筆記與學習紀錄都存在使用者自己瀏覽器的 localStorage：換瀏覽器、換裝置或清除網站資料就會不見，無痕視窗關掉後也會消失。
 
+打包時 `scripts/prerender.mjs` 會替每個階段、單元與課題產生靜態 HTML（含 canonical、Open Graph、JSON-LD 結構化資料），並產生 `sitemap.xml`、`llms.txt`、`llms-full.txt`，讓搜尋引擎與不執行 JavaScript 的 AI 爬蟲讀得到內容。專案網站無法在網域根目錄放 `robots.txt`，所以第一次部署後要到 Google Search Console 手動提交 `https://open94006.github.io/awesome-scalability-spiral/sitemap.xml`。
+
 ## 學習進度與筆記（本機版）
 
 - 存在 `data/progress.sqlite`，由 Vite 伺服器上的 `/api` 讀寫（見 `vite.config.ts`）。
@@ -73,7 +75,7 @@ Pages 版沒有伺服器，學習進度、筆記與學習紀錄都存在使用�
 | 指令 | 用途 |
 | --- | --- |
 | `npm run build` | 型別檢查並打包本機版到 `dist/`（用 `npm run preview` 開啟） |
-| `npm run build:pages` | 打包 GitHub Pages 版到 `dist/`（進度存在瀏覽器） |
+| `npm run build:pages` | 打包 GitHub Pages 版到 `dist/`（進度存在瀏覽器），並產生靜態頁、sitemap 與 llms.txt |
 | `npm run check:links` | 重新抓取上游目錄並檢測所有連結，更新 `src/data/links.json`（約 5 到 10 分鐘） |
 | `npm run check:content` | 確認課程完整涵蓋上游每個網址、每課重點為三到五項，並掃描簡體字與大陸用語 |
 

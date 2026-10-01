@@ -23,6 +23,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # prerender 用 git log 取內容更新日
       - uses: actions/setup-node@v4
         with:
           node-version: 22

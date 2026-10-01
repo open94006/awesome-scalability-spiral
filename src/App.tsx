@@ -3,6 +3,7 @@ import { Archive, BookOpen, Check, ChevronLeft, ChevronRight, CircleAlert, Copy,
 import { checkedAt, lessonById, lessons, tierById, tiers, unitById, type Lesson, type LinkStatus, type Tier, type Unit } from './curriculum';
 import { DesignGuide, Logo } from './DesignGuide';
 import * as store from './store';
+import { HOME_TITLE, SITE_NAME, TAGLINE, tierTitle, unitTitle, withSite } from './seo';
 
 const CN = ['', '一', '二', '三', '四'];
 
@@ -15,8 +16,17 @@ type Route =
   | { name: 'history' }
   | { name: 'design' };
 
-function parseRoute(hash: string): Route {
-  const [, kind = '', id = ''] = hash.replace(/^#/, '').split('/');
+// 網址用一般路徑（/lesson/xxx/），搜尋引擎才會把每一課當成獨立網頁；打包後每條路徑都有預先產生的 HTML（scripts/prerender.mjs）
+const BASE = import.meta.env.BASE_URL;
+// 舊版用 #/lesson/xxx，書籤與外部連結轉成新網址
+if (location.hash.startsWith('#/')) {
+  const old = location.hash.slice(2);
+  history.replaceState(null, '', BASE + (old ? old.replace(/\/?$/, '/') : ''));
+}
+const go = (path: string) => { history.pushState(null, '', path); dispatchEvent(new PopStateEvent('popstate')); };
+
+function parseRoute(path: string): Route {
+  const [kind = '', id = ''] = path.slice(BASE.length).split('/');
   const tier = tierById.get(id as Tier['id']);
   const unit = unitById.get(id);
   const lesson = lessonById.get(id);
@@ -63,8 +73,8 @@ const nextLesson = (done: Set<string>, list = lessons) => list.find((l) => !done
 const searchText = new Map(lessons.map((l) => [l.id, `${l.title} ${l.original} ${l.summary} ${l.points.join(' ')} ${l.unit.name}`.toLowerCase()]));
 
 export default function App() {
-  const [hash, setHash] = useState(() => location.hash);
-  const route = useMemo(() => parseRoute(hash), [hash]);
+  const [path, setPath] = useState(() => location.pathname);
+  const route = useMemo(() => parseRoute(path), [path]);
   const [done, setDone] = useState(() => new Set(store.initialDone()));
   const [query, setQuery] = useState('');
   const [drawer, setDrawer] = useState(false);
@@ -73,15 +83,23 @@ export default function App() {
   const [theme, toggleTheme] = useTheme();
 
   useEffect(() => {
-    const onHash = () => { setHash(location.hash); setQuery(''); setDrawer(false); window.scrollTo(0, 0); };
+    const onNav = () => { setPath(location.pathname); setQuery(''); setDrawer(false); window.scrollTo(0, 0); };
+    // 站內連結不重新載入整頁，改由前端切換
+    const onClick = (e: MouseEvent) => {
+      const a = e.target instanceof Element ? e.target.closest('a') : null;
+      if (!a || a.target || a.origin !== location.origin || !a.pathname.startsWith(BASE) || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      if (a.pathname !== location.pathname) go(a.pathname);
+    };
     const onKey = (e: KeyboardEvent) => {
       const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
       if (e.key === '/' && !typing) { e.preventDefault(); searchRef.current?.focus(); }
       if (e.key === 'Escape') setDrawer(false);
     };
-    addEventListener('hashchange', onHash);
+    addEventListener('popstate', onNav);
+    addEventListener('click', onClick);
     addEventListener('keydown', onKey);
-    return () => { removeEventListener('hashchange', onHash); removeEventListener('keydown', onKey); };
+    return () => { removeEventListener('popstate', onNav); removeEventListener('click', onClick); removeEventListener('keydown', onKey); };
   }, []);
 
   useEffect(() => {
@@ -89,8 +107,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const title = route.name === 'lesson' ? route.lesson.title : route.name === 'unit' ? route.unit.name : route.name === 'tier' ? `第${CN[route.tier.no]}階 ${route.tier.name}` : route.name === 'health' ? '連結健康度' : route.name === 'history' ? '學習紀錄' : route.name === 'design' ? '設計規範' : '';
-    document.title = title ? `${title}｜系統擴展學習網` : '系統擴展學習網｜大型系統的學習路徑';
+    const title = route.name === 'lesson' ? route.lesson.title : route.name === 'unit' ? unitTitle(route.unit) : route.name === 'tier' ? tierTitle(route.tier) : route.name === 'health' ? '連結健康度' : route.name === 'history' ? '學習紀錄' : route.name === 'design' ? '設計規範' : '';
+    document.title = title ? withSite(title) : HOME_TITLE;
   }, [route]);
 
   useEffect(() => {
@@ -190,9 +208,9 @@ function Sidebar({ route, done, open, onClose }: { route: Route; done: Set<strin
       {open && <div className="scrim" onClick={onClose} />}
       <aside className={`sidebar ${open ? 'is-open' : ''}`}>
         <div className="side-head">
-          <a className="brand" href="#/">
+          <a className="brand" href={BASE}>
             <Logo />
-            <span><span className="brand-name">系統擴展學習網</span><span className="brand-sub">大型系統的學習路徑</span></span>
+            <span><span className="brand-name">{SITE_NAME}</span><span className="brand-sub">{TAGLINE}</span></span>
           </a>
           <button ref={closeRef} className="btn btn-quiet btn-icon drawer-close" onClick={onClose} aria-label="關閉學習路徑"><X size={20} aria-hidden /></button>
         </div>
@@ -202,7 +220,7 @@ function Sidebar({ route, done, open, onClose }: { route: Route; done: Set<strin
             <span className="caption num">{pct(finished, lessons.length)}%</span>
           </div>
           <div className="meter"><span style={{ width: `${pct(finished, lessons.length)}%` }} /></div>
-          <a className="btn btn-primary" href={`#/lesson/${next.id}`}><BookOpen size={16} aria-hidden /><span>{finished ? '繼續' : '開始'}：{next.title}</span></a>
+          <a className="btn btn-primary" href={`${BASE}lesson/${next.id}/`}><BookOpen size={16} aria-hidden /><span>{finished ? '繼續' : '開始'}：{next.title}</span></a>
         </div>
         <nav className="path" aria-label="學習路徑">
           <p className="path-label">學習路徑</p>
@@ -219,14 +237,14 @@ function Sidebar({ route, done, open, onClose }: { route: Route; done: Set<strin
                   </button>
                   {isOpen && (
                     <ol className="rail-units">
-                      <li><a className={`rail-unit ${route.name === 'tier' && route.tier === tier ? 'is-current' : ''}`} href={`#/tier/${tier.id}`}><span>階段總覽與晉階檢核</span></a></li>
+                      <li><a className={`rail-unit ${route.name === 'tier' && route.tier === tier ? 'is-current' : ''}`} href={`${BASE}tier/${tier.id}/`}><span>階段總覽與晉階檢核</span></a></li>
                       {tier.units.map((unit, i) => {
                         const k = doneIn(unit.lessons, done);
                         return (
                           <Fragment key={unit.id}>
                             {unit.group && unit.group !== tier.units[i - 1]?.group && <li className="rail-group">{unit.group}</li>}
                             <li>
-                              <a className={`rail-unit ${unit === activeUnit ? 'is-current' : ''} ${k === unit.lessons.length ? 'is-done' : ''}`} href={`#/unit/${unit.id}`} aria-current={unit === activeUnit ? 'page' : undefined}>
+                              <a className={`rail-unit ${unit === activeUnit ? 'is-current' : ''} ${k === unit.lessons.length ? 'is-done' : ''}`} href={`${BASE}unit/${unit.id}/`} aria-current={unit === activeUnit ? 'page' : undefined}>
                                 <span>{unit.name}</span>
                                 <span className="num">{k === unit.lessons.length ? <Check size={14} aria-label="已完成" /> : `${k}/${unit.lessons.length}`}</span>
                               </a>
@@ -242,9 +260,9 @@ function Sidebar({ route, done, open, onClose }: { route: Route; done: Set<strin
           </ol>
         </nav>
         <div className="side-links">
-          <a href="#/history" className={route.name === 'history' ? 'is-current' : ''}><span>學習紀錄</span><span className="caption">完成的課與筆記</span></a>
-          <a href="#/health" className={route.name === 'health' ? 'is-current' : ''}><span>連結健康度</span><span className="caption">{broken} 條失效</span></a>
-          <a href="#/design" className={route.name === 'design' ? 'is-current' : ''}><span>設計規範</span></a>
+          <a href={`${BASE}history/`} className={route.name === 'history' ? 'is-current' : ''}><span>學習紀錄</span><span className="caption">完成的課與筆記</span></a>
+          <a href={`${BASE}health/`} className={route.name === 'health' ? 'is-current' : ''}><span>連結健康度</span><span className="caption">{broken} 條失效</span></a>
+          <a href={`${BASE}design/`} className={route.name === 'design' ? 'is-current' : ''}><span>設計規範</span></a>
         </div>
         <p className="side-note caption">內容整理自 GitHub 上的 awesome-scalability 閱讀清單。學習進度與筆記存在{store.where}{store.browserOnly ? '，換瀏覽器或清除網站資料就會不見' : '，換瀏覽器也看得到'}。</p>
       </aside>
@@ -257,9 +275,9 @@ function Crumbs({ route }: { route: Route }) {
   const tier = route.name === 'tier' ? route.tier : unit?.tier;
   return (
     <nav className="crumbs" aria-label="目前位置">
-      <a href="#/">路徑總覽</a>
-      {tier && <><ChevronRight size={14} aria-hidden /><a href={`#/tier/${tier.id}`}>第{CN[tier.no]}階 {tier.name}</a></>}
-      {unit && <><ChevronRight size={14} aria-hidden /><a href={`#/unit/${unit.id}`}>{unit.name}</a></>}
+      <a href={BASE}>路徑總覽</a>
+      {tier && <><ChevronRight size={14} aria-hidden /><a href={`${BASE}tier/${tier.id}/`}>第{CN[tier.no]}階 {tier.name}</a></>}
+      {unit && <><ChevronRight size={14} aria-hidden /><a href={`${BASE}unit/${unit.id}/`}>{unit.name}</a></>}
       {route.name === 'lesson' && <><ChevronRight size={14} aria-hidden /><strong>第 {route.lesson.unit.lessons.indexOf(route.lesson) + 1} 課</strong></>}
       {route.name === 'health' && <><ChevronRight size={14} aria-hidden /><strong>連結健康度</strong></>}
       {route.name === 'history' && <><ChevronRight size={14} aria-hidden /><strong>學習紀錄</strong></>}
@@ -280,7 +298,7 @@ function Home({ done }: { done: Set<string> }) {
           <div className={`hero-next tier-${next.tier.id}`}>
             <p className="eyebrow">{started ? '下一課' : '第一課'}：第{CN[next.tier.no]}階 {next.tier.name}，{next.unit.name}</p>
             <p className="hero-next-title">{next.title}</p>
-            <a className="btn btn-primary" href={`#/lesson/${next.id}`}>{started ? '繼續這一課' : '開始這一課'}</a>
+            <a className="btn btn-primary" href={`${BASE}lesson/${next.id}/`}>{started ? '繼續這一課' : '開始這一課'}</a>
           </div>
         </div>
       </section>
@@ -291,7 +309,7 @@ function Home({ done }: { done: Set<string> }) {
           const k = doneIn(all, done);
           return (
             <li key={tier.id} className={`tier-${tier.id}`}>
-              <a className="stair" href={`#/tier/${tier.id}`}>
+              <a className="stair" href={`${BASE}tier/${tier.id}/`}>
                 <span className="step" style={vars({ '--p': pct(k, all.length) })}>
                   <span className="step-no">第{CN[tier.no]}階</span>
                   <span className="step-name">{tier.name}</span>
@@ -333,7 +351,7 @@ function TierPage({ tier, done }: { tier: Tier; done: Set<string> }) {
         <p className="lead">{tier.promise}</p>
         <div className="meter" style={{ maxWidth: 420 }}><span style={{ width: `${pct(k, all.length)}%` }} /></div>
         <p className="caption">已完成 <span className="num">{k} / {all.length}</span> 課</p>
-        <div className="row"><a className="btn btn-primary" href={`#/lesson/${next.id}`}>{k === 0 ? '開始這一階' : k === all.length ? '重溫這一階' : '繼續這一階'}</a></div>
+        <div className="row"><a className="btn btn-primary" href={`${BASE}lesson/${next.id}/`}>{k === 0 ? '開始這一階' : k === all.length ? '重溫這一階' : '繼續這一階'}</a></div>
       </header>
 
       <section className="section">
@@ -352,7 +370,7 @@ function TierPage({ tier, done }: { tier: Tier; done: Set<string> }) {
             return (
               <Fragment key={unit.id}>
                 {unit.group && unit.group !== tier.units[i - 1]?.group && <h3 className="group-title">{unit.group}</h3>}
-                <a className="unit-card" href={`#/unit/${unit.id}`}>
+                <a className="unit-card" href={`${BASE}unit/${unit.id}/`}>
                   <span className="unit-no">{i + 1}</span>
                   <div className="stack" style={{ gap: 2 }}><h3>{unit.name}</h3><p className="muted">{unit.question}</p></div>
                   <span className="unit-meta">
@@ -368,8 +386,8 @@ function TierPage({ tier, done }: { tier: Tier; done: Set<string> }) {
       </section>
 
       <nav className="pager" aria-label="其他階段">
-        {prevTier ? <a className="btn btn-secondary" href={`#/tier/${prevTier.id}`}><ChevronLeft size={16} aria-hidden /><span>第{CN[prevTier.no]}階 {prevTier.name}</span></a> : <span />}
-        {nextTier && <a className="btn btn-secondary" href={`#/tier/${nextTier.id}`}><span>第{CN[nextTier.no]}階 {nextTier.name}</span><ChevronRight size={16} aria-hidden /></a>}
+        {prevTier ? <a className="btn btn-secondary" href={`${BASE}tier/${prevTier.id}/`}><ChevronLeft size={16} aria-hidden /><span>第{CN[prevTier.no]}階 {prevTier.name}</span></a> : <span />}
+        {nextTier && <a className="btn btn-secondary" href={`${BASE}tier/${nextTier.id}/`}><span>第{CN[nextTier.no]}階 {nextTier.name}</span><ChevronRight size={16} aria-hidden /></a>}
       </nav>
     </div>
   );
@@ -389,7 +407,7 @@ function UnitPage({ unit, done }: { unit: Unit; done: Set<string> }) {
         <p className="question">{unit.question}</p>
         <p className="caption">原目錄分類：{unit.sections.join('、')}。共 {unit.lessons.length} 課，已完成 {k} 課。</p>
         <div className="row">
-          <a className="btn btn-primary" href={`#/lesson/${next.id}`}>{k === 0 ? '從第一課開始' : k === unit.lessons.length ? '重溫第一課' : `繼續第 ${unit.lessons.indexOf(next) + 1} 課`}</a>
+          <a className="btn btn-primary" href={`${BASE}lesson/${next.id}/`}>{k === 0 ? '從第一課開始' : k === unit.lessons.length ? '重溫第一課' : `繼續第 ${unit.lessons.indexOf(next) + 1} 課`}</a>
         </div>
       </header>
       <ol className="lesson-list">
@@ -400,8 +418,8 @@ function UnitPage({ unit, done }: { unit: Unit; done: Set<string> }) {
         ))}
       </ol>
       <nav className="pager" aria-label="其他單元">
-        {prevUnit ? <a className="btn btn-secondary" href={`#/unit/${prevUnit.id}`}><ChevronLeft size={16} aria-hidden /><span>{prevUnit.name}</span></a> : <a className="btn btn-secondary" href={`#/tier/${unit.tier.id}`}><ChevronLeft size={16} aria-hidden /><span>回到階段總覽</span></a>}
-        {nextUnit && <a className="btn btn-secondary" href={`#/unit/${nextUnit.id}`}><span>{nextUnit.name}</span><ChevronRight size={16} aria-hidden /></a>}
+        {prevUnit ? <a className="btn btn-secondary" href={`${BASE}unit/${prevUnit.id}/`}><ChevronLeft size={16} aria-hidden /><span>{prevUnit.name}</span></a> : <a className="btn btn-secondary" href={`${BASE}tier/${unit.tier.id}/`}><ChevronLeft size={16} aria-hidden /><span>回到階段總覽</span></a>}
+        {nextUnit && <a className="btn btn-secondary" href={`${BASE}unit/${nextUnit.id}/`}><span>{nextUnit.name}</span><ChevronRight size={16} aria-hidden /></a>}
       </nav>
     </div>
   );
@@ -409,7 +427,7 @@ function UnitPage({ unit, done }: { unit: Unit; done: Set<string> }) {
 
 function LessonRow({ lesson, label, done, context, note }: { lesson: Lesson; label: string; done: boolean; context?: string; note?: string }) {
   return (
-    <a className={`lesson-row tier-${lesson.tier.id} ${done ? 'is-done' : ''}`} href={`#/lesson/${lesson.id}`}>
+    <a className={`lesson-row tier-${lesson.tier.id} ${done ? 'is-done' : ''}`} href={`${BASE}lesson/${lesson.id}/`}>
       <span className="lesson-no">{label}</span>
       <span>
         <strong>{lesson.title}</strong>
@@ -478,7 +496,7 @@ function LessonPage({ lesson, done, onDone, onCopy }: { lesson: Lesson; done: bo
   const prev = lessons[lesson.order - 1];
   const next = lessons[lesson.order + 1];
   // 引導：同單元往下一課；換單元先看單元問題；換階段先看晉階檢核
-  const nextHref = !next ? '#/' : next.tier !== tier ? `#/tier/${next.tier.id}` : next.unit !== unit ? `#/unit/${next.unit.id}` : `#/lesson/${next.id}`;
+  const nextHref = !next ? BASE : next.tier !== tier ? `${BASE}tier/${next.tier.id}/` : next.unit !== unit ? `${BASE}unit/${next.unit.id}/` : `${BASE}lesson/${next.id}/`;
   const nextLabel = !next ? '回到路徑總覽' : next.tier !== tier ? `前往第${CN[next.tier.no]}階：${next.tier.name}` : next.unit !== unit ? `下一個單元：${next.unit.name}` : '下一課';
   const google = `https://www.google.com/search?q=${encodeURIComponent(`"${lesson.original}"`)}`;
 
@@ -524,7 +542,7 @@ function LessonPage({ lesson, done, onDone, onCopy }: { lesson: Lesson; done: bo
       </section>
 
       <nav className="pager" aria-label="課題導覽">
-        {prev ? <a className="btn btn-secondary" href={`#/lesson/${prev.id}`}><ChevronLeft size={16} aria-hidden /><span>上一課</span></a> : <span />}
+        {prev ? <a className="btn btn-secondary" href={`${BASE}lesson/${prev.id}/`}><ChevronLeft size={16} aria-hidden /><span>上一課</span></a> : <span />}
         <div className="row" style={{ justifyContent: 'flex-end' }}>
           {done ? (
             <>
@@ -532,7 +550,7 @@ function LessonPage({ lesson, done, onDone, onCopy }: { lesson: Lesson; done: bo
               <a className="btn btn-primary" href={nextHref}><span>{nextLabel}</span><ChevronRight size={16} aria-hidden /></a>
             </>
           ) : (
-            <button className="btn btn-primary" onClick={() => { onDone(lesson, true); location.hash = nextHref; }}><span>完成，{nextLabel}</span><ChevronRight size={16} aria-hidden /></button>
+            <button className="btn btn-primary" onClick={() => { onDone(lesson, true); go(nextHref); }}><span>完成，{nextLabel}</span><ChevronRight size={16} aria-hidden /></button>
           )}
         </div>
       </nav>
@@ -750,7 +768,7 @@ function HealthPage() {
           <tbody>
             {shown.map((l) => (
               <tr key={l.id}>
-                <td><a href={`#/lesson/${l.id}`}>{l.title}</a><div className="mono" style={{ color: 'var(--ink-3)' }}>{l.url}</div></td>
+                <td><a href={`${BASE}lesson/${l.id}/`}>{l.title}</a><div className="mono" style={{ color: 'var(--ink-3)' }}>{l.url}</div></td>
                 <td><StatusChip status={l.status} /></td>
                 <td>{l.reason}</td>
                 <td>

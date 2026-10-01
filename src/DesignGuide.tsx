@@ -1,4 +1,5 @@
 import { Archive, Check, ChevronRight, CircleAlert, Copy, ExternalLink, Sparkles } from 'lucide-react';
+import { SITE_NAME } from './seo';
 import { lessons, tiers, units } from './curriculum';
 
 export function Logo({ size = 36 }: { size?: number }) {
@@ -83,7 +84,7 @@ export function DesignGuide() {
       <section className="section">
         <h2 className="section-title">品牌標誌</h2>
         <div className="spec">
-          <div className="row"><Logo size={72} /><div><p style={{ fontSize: 'var(--fs-h2)', fontWeight: 700 }}>系統擴展學習網</p><p className="caption">四段弧線由小到大、由淺入深，對應知識、習慣、技能、智慧。</p></div></div>
+          <div className="row"><Logo size={72} /><div><p style={{ fontSize: 'var(--fs-h2)', fontWeight: 700 }}>{SITE_NAME}</p><p className="caption">四段弧線由小到大、由淺入深，對應知識、習慣、技能、智慧。</p></div></div>
         </div>
       </section>
 
@@ -171,7 +172,7 @@ export function DesignGuide() {
         <h2 className="section-title">卡片與列表</h2>
         <h3 className="group-title">單元卡</h3>
         <div className={`tier-${unit.tier.id}`}>
-          <a className="unit-card" href={`#/unit/${unit.id}`}>
+          <a className="unit-card" href={`${import.meta.env.BASE_URL}unit/${unit.id}/`}>
             <span className="unit-no">2</span>
             <div className="stack" style={{ gap: 2 }}><h3>{unit.name}</h3><p className="muted">{unit.question}</p></div>
             <span className="unit-meta"><span className="num">3 / {unit.lessons.length} 課</span><span className="meter"><span style={{ width: '33%' }} /></span><span>{unit.sections.join('、')}</span></span>
@@ -179,8 +180,8 @@ export function DesignGuide() {
         </div>
         <h3 className="group-title">課題列</h3>
         <ol className="lesson-list">
-          <li><a className={`lesson-row tier-${sample.tier.id} is-done`} href={`#/lesson/${sample.id}`}><span className="lesson-no">1</span><span><strong>{sample.title}</strong><span className="caption" lang="en">{sample.original}</span></span><span className="lesson-side"><Check size={16} className="done-mark" aria-label="已完成" /></span></a></li>
-          <li><a className={`lesson-row tier-${dead.tier.id}`} href={`#/lesson/${dead.id}`}><span className="lesson-no">2</span><span><strong>{dead.title}</strong><span className="caption" lang="en">{dead.original}</span></span><span className="lesson-side"><span className="chip chip-dead">連結失效</span></span></a></li>
+          <li><a className={`lesson-row tier-${sample.tier.id} is-done`} href={`${import.meta.env.BASE_URL}lesson/${sample.id}/`}><span className="lesson-no">1</span><span><strong>{sample.title}</strong><span className="caption" lang="en">{sample.original}</span></span><span className="lesson-side"><Check size={16} className="done-mark" aria-label="已完成" /></span></a></li>
+          <li><a className={`lesson-row tier-${dead.tier.id}`} href={`${import.meta.env.BASE_URL}lesson/${dead.id}/`}><span className="lesson-no">2</span><span><strong>{dead.title}</strong><span className="caption" lang="en">{dead.original}</span></span><span className="lesson-side"><span className="chip chip-dead">連結失效</span></span></a></li>
         </ol>
         <h3 className="group-title">重點</h3>
         <ul className={`points tier-${sample.tier.id}`}>

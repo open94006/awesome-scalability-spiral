@@ -95,8 +95,8 @@ function progressApi(): Plugin {
   };
 }
 
-// 打包時不需要進度介面；base 用相對路徑，放在 GitHub Pages 的子路徑（/repo 名稱/）也能正常載入
-export default defineConfig(({ command }) => ({
-  base: './',
+// 打包時不需要進度介面。網址改用一般路徑（/lesson/xxx/），深層頁面要用絕對路徑才載得到資源，所以 GitHub Pages 版的 base 是 repo 名稱
+export default defineConfig(({ command, mode }) => ({
+  base: mode === 'pages' ? '/awesome-scalability-spiral/' : '/',
   plugins: command === 'serve' ? [react(), progressApi()] : [react()],
 }));
